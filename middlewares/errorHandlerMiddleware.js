@@ -13,11 +13,6 @@ const errorHandler = (err, req, res) => {
       .join(', ');
   }
 
-  if (err.name === 'CastError') {
-    customError.statusCode = StatusCodes.NOT_FOUND;
-    customError.msg = `No job with ID ${err.value}`;
-  }
-
   if (err.code && err.code === 11000) {
     customError.statusCode = StatusCodes.BAD_REQUEST;
     customError.msg = `${err.keyValue.email} is already in use. Please choose a different email address.`;
