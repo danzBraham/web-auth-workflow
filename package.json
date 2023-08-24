@@ -1,0 +1,40 @@
+{
+  "name": "cryptonesia-id-backend",
+  "version": "1.0.0",
+  "description": "Cryptonesia ID Backend: A backend application for managing user accounts and cryptocurrency-related features.",
+  "type": "module",
+  "exports": "./app.js",
+  "scripts": {
+    "start": "node app.js",
+    "lint": "eslint ./"
+  },
+  "keywords": [
+    "cryptocurrency",
+    "backend",
+    "user accounts",
+    "API"
+  ],
+  "author": "danzBraham",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^8.47.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.28.1"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-async-errors": "^3.1.1",
+    "express-rate-limit": "^6.9.0",
+    "helmet": "^7.0.0",
+    "http-status-codes": "^2.2.0",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.1",
+    "morgan": "^1.10.0",
+    "pg": "^8.11.3",
+    "validator": "^13.11.0"
+  }
+}
