@@ -17,6 +17,11 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     customError.msg = 'email already in use';
   }
 
+  if (err.code === '22P02') {
+    customError.statusCode = StatusCodes.NOT_FOUND;
+    customError.msg = 'user not found';
+  }
+
   return res.status(customError.statusCode).json({ status: 'fail', message: customError.msg });
 };
 
