@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import bcrypt from 'bcryptjs';
 import { attachCookiesToResponse } from '../utils/index.js';
+import { BadRequestError, UnauthorizedError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
 
 const isFirstAccount = async () => {
@@ -34,7 +35,29 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  res.send('ok');
+  const { email, password } = req.body;
+  if (!email || !password) throw new BadRequestError('Please provide email and password');
+
+  const query = {
+    text: 'SELECT * FROM users WHERE email = $1',
+    values: [email],
+  };
+  const { rows, rowCount } = await pool.query(query);
+
+  if (rowCount === 0) throw new UnauthorizedError('Invalid credentials');
+  const { user_id: userId, username, password: hashedPassword, role } = rows[0];
+
+  const checkPassword = await bcrypt.compare(password, hashedPassword);
+  if (!checkPassword) throw new UnauthorizedError('Invalid password');
+
+  const userPayload = { userId, username, role };
+  attachCookiesToResponse({ res, userPayload });
+
+  res.status(StatusCodes.OK).json({
+    status: 'success',
+    message: 'successfully logged in',
+    data: { ...userPayload },
+  });
 };
 
 export const logout = async (req, res) => {
