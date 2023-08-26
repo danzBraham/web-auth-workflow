@@ -11,7 +11,7 @@ export const getAllUsers = async (req, res) => {
   };
   const { rows } = await pool.query(query);
 
-  res.json({
+  res.status(StatusCodes.OK).json({
     status: 'success',
     message: 'successfully getting all users',
     data: rows,
@@ -32,7 +32,7 @@ export const getSingleUser = async (req, res) => {
 
   if (rowCount === 0) throw new NotFoundError('user not found');
 
-  res.json({
+  res.status(StatusCodes.OK).json({
     status: 'success',
     message: 'successfully getting user',
     data: rows[0],
