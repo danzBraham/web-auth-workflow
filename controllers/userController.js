@@ -1,5 +1,4 @@
 import { StatusCodes } from 'http-status-codes';
-import { attachCookiesToResponse } from '../utils/index.js';
 import { NotFoundError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
 
