@@ -14,7 +14,7 @@ export const getAllUsers = async (req, res) => {
 
   res.json({
     status: 'success',
-    message: 'success getting all users',
+    message: 'successfully getting all users',
     data: rows,
   });
 };
