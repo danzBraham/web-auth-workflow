@@ -1,24 +1,23 @@
 import { StatusCodes } from 'http-status-codes';
 
-const errorHandler = (err, req, res) => {
+// eslint-disable-next-line no-unused-vars
+const errorHandlerMiddleware = (err, req, res, next) => {
   const customError = {
     statusCode: err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
     msg: err.message || 'Something went wrong try again later',
   };
 
-  if (err.name === 'ValidationError') {
+  if (err.constraint === 'users_username_key') {
     customError.statusCode = StatusCodes.BAD_REQUEST;
-    customError.msg = Object.values(err.errors)
-      .map((item) => item.message)
-      .join(', ');
+    customError.msg = 'username already in use';
   }
 
-  if (err.code && err.code === 11000) {
+  if (err.constraint === 'users_email_key') {
     customError.statusCode = StatusCodes.BAD_REQUEST;
-    customError.msg = `${err.keyValue.email} is already in use. Please choose a different email address.`;
+    customError.msg = 'email already in use';
   }
 
-  return res.status(customError.statusCode).json({ msg: customError.msg });
+  return res.status(customError.statusCode).json({ status: 'fail', message: customError.msg });
 };
 
-export default errorHandler;
+export default errorHandlerMiddleware;
