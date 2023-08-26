@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 
 // routers
 import authRouter from './routes/authRoutes.js';
+import userRouter from './routes/userRoutes.js';
 
 // middlewares
 import notFoundMiddleware from './middlewares/notFoundMiddleware.js';
@@ -32,6 +33,7 @@ app.get('/api/v1', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/users', userRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
