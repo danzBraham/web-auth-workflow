@@ -1,7 +1,7 @@
 import CustomAPIError from './customError.js';
-import BadRequestError from './badRequest.js';
-import UnauthorizedError from './unauthorized.js';
-import ForbiddenError from './forbidden.js';
-import NotFoundError from './notFound.js';
+import BadRequestError from './badRequestError.js';
+import AuthenticationError from './authenticationError.js';
+import AuthorizationError from './authorizationError.js';
+import NotFoundError from './notFoundError.js';
 
-export { CustomAPIError, BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError };
+export { CustomAPIError, BadRequestError, AuthenticationError, AuthorizationError, NotFoundError };
