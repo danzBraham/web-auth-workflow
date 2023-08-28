@@ -14,7 +14,6 @@ export const authenticateUser = async (req, res, next) => {
   }
 };
 
-// eslint-disable-next-line arrow-body-style
 export const authorizePermission = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

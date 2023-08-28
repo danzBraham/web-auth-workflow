@@ -16,10 +16,11 @@
         "ObjectExpression": { "multiline": true },
         "ObjectPattern": { "multiline": true },
         "ImportDeclaration": { "multiline": true },
-        "ExportDeclaration": "never"
+        "ExportDeclaration": { "multiline": true }
       }
     ],
     "no-useless-constructor": "off",
-    "no-console": "off"
+    "no-console": "off",
+    "arrow-body-style": "off"
   }
 }

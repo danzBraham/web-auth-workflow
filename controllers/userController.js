@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import bcrypt from 'bcryptjs';
-import { attachCookiesToResponse } from '../utils/jwt.js';
+import { attachCookiesToResponse, checkPermissions } from '../utils/index.js';
 import { BadRequestError, NotFoundError, AuthenticationError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
 
@@ -33,6 +33,7 @@ export const getSingleUser = async (req, res) => {
   const { rows, rowCount } = await pool.query(query);
 
   if (rowCount === 0) throw new NotFoundError('user not found');
+  checkPermissions(req.user, userId);
 
   res.status(StatusCodes.OK).json({
     status: 'success',
