@@ -1,6 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import bcrypt from 'bcryptjs';
-import { attachCookiesToResponse } from '../utils/index.js';
+import { attachCookiesToResponse, hashPassword, verifyPassword } from '../utils/index.js';
 import { BadRequestError, AuthenticationError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
 
@@ -11,10 +10,12 @@ const isFirstAccount = async () => {
 
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
-  const role = (await isFirstAccount()) ? 'admin' : 'user';
+  if (!username || !email || !password) {
+    throw new BadRequestError('Please provide username, email, and password');
+  }
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  const role = (await isFirstAccount()) ? 'admin' : 'user';
+  const hashedPassword = await hashPassword(password);
 
   const query = {
     text: `INSERT INTO users (username, email, password, role)
@@ -29,7 +30,7 @@ export const register = async (req, res) => {
 
   res.status(StatusCodes.CREATED).json({
     status: 'success',
-    message: 'success adding user',
+    message: 'successfully adding user',
     data: { ...userPayload },
   });
 };
@@ -47,8 +48,8 @@ export const login = async (req, res) => {
   if (rowCount === 0) throw new AuthenticationError('Invalid credentials');
   const { user_id: userId, username, password: hashedPassword, role } = rows[0];
 
-  const checkPassword = await bcrypt.compare(password, hashedPassword);
-  if (!checkPassword) throw new AuthenticationError('Invalid password');
+  const isPasswordCorrect = await verifyPassword(password, hashedPassword);
+  if (!isPasswordCorrect) throw new AuthenticationError('Invalid password');
 
   const userPayload = { userId, username, role };
   attachCookiesToResponse({ res, userPayload });

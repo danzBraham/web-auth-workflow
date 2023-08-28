@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import { AuthenticationError } from '../errors/index.js';
 
 export const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
@@ -7,7 +6,6 @@ export const hashPassword = async (password) => {
 };
 
 export const verifyPassword = async (password, hashedPassword) => {
-  const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
-  if (!isPasswordCorrect) throw new AuthenticationError('Invalid password');
+  const isPasswordCorrect = bcrypt.compare(password, hashedPassword);
   return isPasswordCorrect;
 };
