@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { AuthenticationError } from '../errors/index.js';
 
-export const createPassword = async (password) => {
+export const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };

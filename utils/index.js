@@ -1,4 +1,4 @@
 import { createJWT, verifyToken, attachCookiesToResponse } from './jwt.js';
-import { createPassword, verifyPassword } from './password.js';
+import { hashPassword, verifyPassword } from './password.js';
 
-export { createJWT, verifyToken, attachCookiesToResponse, createPassword, verifyPassword };
+export { createJWT, verifyToken, attachCookiesToResponse, hashPassword, verifyPassword };
