@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import bcrypt from 'bcryptjs';
+import { attachCookiesToResponse } from '../utils/jwt.js';
 import { BadRequestError, NotFoundError, AuthenticationError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
 
@@ -45,7 +46,26 @@ export const showCurrentUser = async (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
-  res.send('Update User');
+  const { username, email } = req.body;
+  if (!username || !email) throw new BadRequestError('Please provide username and email');
+
+  const { userId, role } = req.user;
+  const queryUpdate = {
+    text: `UPDATE users
+            SET username = $1, email = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = $3`,
+    values: [username, email, userId],
+  };
+  await pool.query(queryUpdate);
+
+  const userPayload = { userId, username, role };
+  attachCookiesToResponse({ res, userPayload });
+
+  res.status(StatusCodes.OK).json({
+    status: 'success',
+    message: 'successfully update user',
+    data: { ...userPayload },
+  });
 };
 
 export const updateUserPassword = async (req, res) => {
