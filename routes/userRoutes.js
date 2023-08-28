@@ -12,6 +12,7 @@ const router = express.Router();
 
 router.route('/').get(authenticateUser, authorizePermission('admin'), getAllUsers);
 router.route('/showMe').get(authenticateUser, showCurrentUser);
+router.route('/updateUserPassword').patch(authenticateUser, updateUserPassword);
 router.route('/:id').get(authenticateUser, getSingleUser);
 
 export default router;

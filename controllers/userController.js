@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import { NotFoundError } from '../errors/index.js';
+import bcrypt from 'bcryptjs';
+import { BadRequestError, NotFoundError, AuthenticationError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
 
 export const getAllUsers = async (req, res) => {
@@ -48,5 +49,30 @@ export const updateUser = async (req, res) => {
 };
 
 export const updateUserPassword = async (req, res) => {
-  res.send('Update User Password');
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) throw new BadRequestError('Please provide both values');
+
+  const { userId } = req.user;
+  const queryPassword = {
+    text: 'SELECT password FROM users WHERE user_id = $1',
+    values: [userId],
+  };
+  const { rows } = await pool.query(queryPassword);
+
+  const verifyPassword = await bcrypt.compare(oldPassword, rows[0].password);
+  if (!verifyPassword) throw new AuthenticationError('Wrong password');
+
+  const salt = await bcrypt.genSalt(10);
+  const newHashedPassword = await bcrypt.hash(newPassword, salt);
+
+  const queryUpdate = {
+    text: 'UPDATE users SET password = $1 WHERE user_id = $2',
+    values: [newHashedPassword, userId],
+  };
+  await pool.query(queryUpdate);
+
+  res.status(StatusCodes.OK).json({
+    status: 'success',
+    message: 'successfully update password',
+  });
 };
