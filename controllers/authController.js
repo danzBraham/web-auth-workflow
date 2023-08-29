@@ -29,7 +29,7 @@ export const register = async (req, res) => {
 
   res.status(StatusCodes.CREATED).json({
     status: 'success',
-    message: 'successfully adding user',
+    message: 'Successfully adding user',
     data: { ...userPayload },
   });
 };
@@ -56,7 +56,7 @@ export const login = async (req, res) => {
 
   res.status(StatusCodes.OK).json({
     status: 'success',
-    message: 'successfully logged in',
+    message: 'Successfully logged in',
     data: { ...userPayload },
   });
 };
@@ -69,6 +69,6 @@ export const logout = async (req, res) => {
 
   res.status(StatusCodes.OK).json({
     status: 'success',
-    message: 'successfully logged out',
+    message: 'Successfully logged out',
   });
 };

@@ -19,7 +19,7 @@ export const getAllUsers = async (req, res) => {
 
   res.status(StatusCodes.OK).json({
     status: 'success',
-    message: 'successfully getting all users',
+    message: 'Successfully getting all users',
     data: rows,
   });
 };
@@ -36,12 +36,12 @@ export const getSingleUser = async (req, res) => {
   };
   const { rows, rowCount } = await pool.query(query);
 
-  if (rowCount === 0) throw new NotFoundError('user not found');
+  if (rowCount === 0) throw new NotFoundError('User not found');
   checkPermissions(req.user, userId);
 
   res.status(StatusCodes.OK).json({
     status: 'success',
-    message: 'successfully getting user',
+    message: 'Successfully getting user',
     data: rows[0],
   });
 };
@@ -69,7 +69,7 @@ export const updateUser = async (req, res) => {
 
   res.status(StatusCodes.OK).json({
     status: 'success',
-    message: 'successfully update user',
+    message: 'Successfully update user',
     data: { ...userPayload },
   });
 };
@@ -77,7 +77,6 @@ export const updateUser = async (req, res) => {
 export const updateUserPassword = async (req, res) => {
   await validateUpdatePasswordPayload(req.body);
 
-  // if (!oldPassword || !newPassword) throw new BadRequestError('Please provide both values');
   const { oldPassword, newPassword } = req.body;
   const { userId } = req.user;
 
@@ -88,7 +87,7 @@ export const updateUserPassword = async (req, res) => {
   const { rows } = await pool.query(queryPassword);
 
   const verifyPassword = await bcrypt.compare(oldPassword, rows[0].password);
-  if (!verifyPassword) throw new AuthenticationError('Wrong password');
+  if (!verifyPassword) throw new AuthenticationError('Invalid old password');
 
   const salt = await bcrypt.genSalt(10);
   const newHashedPassword = await bcrypt.hash(newPassword, salt);
@@ -101,6 +100,6 @@ export const updateUserPassword = async (req, res) => {
 
   res.status(StatusCodes.OK).json({
     status: 'success',
-    message: 'successfully update password',
+    message: 'Successfully update password',
   });
 };
