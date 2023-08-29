@@ -4,25 +4,26 @@ import { StatusCodes } from 'http-status-codes';
 const errorHandlerMiddleware = (err, req, res, next) => {
   const customError = {
     statusCode: err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-    msg: err.message || 'Something went wrong try again later',
+    message: err.message || 'Something went wrong try again later',
   };
 
   if (err.constraint === 'users_username_key') {
     customError.statusCode = StatusCodes.BAD_REQUEST;
-    customError.msg = 'username already in use';
+    customError.message = 'username already in use';
   }
 
   if (err.constraint === 'users_email_key') {
     customError.statusCode = StatusCodes.BAD_REQUEST;
-    customError.msg = 'email already in use';
+    customError.message = 'email already in use';
   }
 
   if (err.code === '22P02') {
     customError.statusCode = StatusCodes.NOT_FOUND;
-    customError.msg = 'user not found';
+    customError.message = 'user not found';
   }
 
-  return res.status(customError.statusCode).json({ status: 'fail', message: customError.msg });
+  customError.message = customError.message.replace(/"/g, '');
+  return res.status(customError.statusCode).json({ status: 'fail', message: customError.message });
 };
 
 export default errorHandlerMiddleware;

@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { attachCookiesToResponse, hashPassword, verifyPassword } from '../utils/index.js';
-import { BadRequestError, AuthenticationError } from '../errors/index.js';
+import { AuthenticationError } from '../errors/index.js';
+import { validateRegisterPayload, validateLoginPayload } from '../validators/auth/index.js';
 import pool from '../db/connectDB.js';
 
 const isFirstAccount = async () => {
@@ -9,11 +10,9 @@ const isFirstAccount = async () => {
 };
 
 export const register = async (req, res) => {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    throw new BadRequestError('Please provide username, email, and password');
-  }
+  await validateRegisterPayload(req.body);
 
+  const { username, email, password } = req.body;
   const role = (await isFirstAccount()) ? 'admin' : 'user';
   const hashedPassword = await hashPassword(password);
 
@@ -36,8 +35,9 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
+  await validateLoginPayload(req.body);
+
   const { email, password } = req.body;
-  if (!email || !password) throw new BadRequestError('Please provide email and password');
 
   const query = {
     text: 'SELECT * FROM users WHERE email = $1',
