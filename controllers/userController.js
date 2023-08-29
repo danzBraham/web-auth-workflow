@@ -1,8 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import bcrypt from 'bcryptjs';
-import { attachCookiesToResponse, checkPermissions } from '../utils/index.js';
-import { BadRequestError, NotFoundError, AuthenticationError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
+import { attachCookiesToResponse, checkPermissions } from '../utils/index.js';
+import { NotFoundError, AuthenticationError } from '../errors/index.js';
+import {
+  validateUpdateUserPayload,
+  validateUpdatePasswordPayload,
+} from '../validators/users/index.js';
 
 export const getAllUsers = async (req, res) => {
   const query = {
@@ -47,10 +51,11 @@ export const showCurrentUser = async (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
-  const { username, email } = req.body;
-  if (!username || !email) throw new BadRequestError('Please provide username and email');
+  await validateUpdateUserPayload(req.body);
 
+  const { username, email } = req.body;
   const { userId, role } = req.user;
+
   const queryUpdate = {
     text: `UPDATE users
             SET username = $1, email = $2, updated_at = CURRENT_TIMESTAMP
@@ -70,10 +75,12 @@ export const updateUser = async (req, res) => {
 };
 
 export const updateUserPassword = async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-  if (!oldPassword || !newPassword) throw new BadRequestError('Please provide both values');
+  await validateUpdatePasswordPayload(req.body);
 
+  // if (!oldPassword || !newPassword) throw new BadRequestError('Please provide both values');
+  const { oldPassword, newPassword } = req.body;
   const { userId } = req.user;
+
   const queryPassword = {
     text: 'SELECT password FROM users WHERE user_id = $1',
     values: [userId],
