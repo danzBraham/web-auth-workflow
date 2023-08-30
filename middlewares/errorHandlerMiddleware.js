@@ -7,16 +7,6 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     message: err.message || 'Something went wrong try again later',
   };
 
-  if (err.constraint === 'users_username_key') {
-    customError.statusCode = StatusCodes.BAD_REQUEST;
-    customError.message = 'Username already in use';
-  }
-
-  if (err.constraint === 'users_email_key') {
-    customError.statusCode = StatusCodes.BAD_REQUEST;
-    customError.message = 'Email already in use';
-  }
-
   if (err.code === '22P02') {
     customError.statusCode = StatusCodes.NOT_FOUND;
     customError.message = 'User not found';

@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { attachCookiesToResponse, hashPassword, verifyPassword } from '../utils/index.js';
-import { AuthenticationError } from '../errors/index.js';
+import { AuthenticationError, BadRequestError } from '../errors/index.js';
 import { validateRegisterPayload, validateLoginPayload } from '../validators/auth/index.js';
 import pool from '../db/connectDB.js';
 
@@ -9,10 +9,33 @@ const isFirstAccount = async () => {
   return rowCount === 0;
 };
 
+const verifyUsername = async (username) => {
+  const query = {
+    text: 'SELECT username from users WHERE username = $1',
+    values: [username],
+  };
+  const { rowCount } = await pool.query(query);
+
+  if (rowCount > 0) throw new BadRequestError('Username already in use');
+};
+
+const verifyEmail = async (email) => {
+  const query = {
+    text: 'SELECT email from users WHERE email = $1',
+    values: [email],
+  };
+  const { rowCount } = await pool.query(query);
+
+  if (rowCount > 0) throw new BadRequestError('Email already in use');
+};
+
 export const register = async (req, res) => {
   await validateRegisterPayload(req.body);
 
   const { username, email, password } = req.body;
+  await verifyUsername(username);
+  await verifyEmail(email);
+
   const role = (await isFirstAccount()) ? 'admin' : 'user';
   const hashedPassword = await hashPassword(password);
 
