@@ -7,7 +7,7 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     message: err.message || 'Something went wrong try again later',
   };
 
-  if (err.code === '22P02') {
+  if (err.details && err.details[0].context.label === 'id') {
     customError.statusCode = StatusCodes.NOT_FOUND;
     customError.message = 'User not found';
   }

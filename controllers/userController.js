@@ -4,6 +4,7 @@ import pool from '../db/connectDB.js';
 import { attachCookiesToResponse, checkPermissions } from '../utils/index.js';
 import { NotFoundError, AuthenticationError } from '../errors/index.js';
 import {
+  validateUserId,
   validateUpdateUserPayload,
   validateUpdatePasswordPayload,
 } from '../validators/users/index.js';
@@ -25,6 +26,8 @@ export const getAllUsers = async (req, res) => {
 };
 
 export const getSingleUser = async (req, res) => {
+  await validateUserId(req.params);
+
   const { id: userId } = req.params;
 
   const query = {
