@@ -4,6 +4,8 @@ import { AuthenticationError, BadRequestError } from '../errors/index.js';
 import { validateRegisterPayload, validateLoginPayload } from '../validators/auth/index.js';
 import pool from '../db/connectDB.js';
 
+const crypto = await import('node:crypto');
+
 const isFirstAccount = async () => {
   const { rowCount } = await pool.query('SELECT * FROM users');
   return rowCount === 0;
@@ -38,7 +40,7 @@ export const register = async (req, res) => {
 
   const role = (await isFirstAccount()) ? 'admin' : 'user';
   const hashedPassword = await hashPassword(password);
-  const verificationToken = 'fake token';
+  const verificationToken = crypto.randomBytes(40).toString('hex');
 
   const query = {
     text: `INSERT INTO users (username, email, password, role, verification_token)
@@ -53,6 +55,33 @@ export const register = async (req, res) => {
     message: 'Success! Please check your email to verify account',
     data: { verificationToken },
   });
+};
+
+export const verifyEmailToken = async (req, res) => {
+  const { email, verificationToken } = req.body;
+
+  const queryEmail = {
+    text: 'SELECT verification_token FROM users WHERE email = $1',
+    values: [email],
+  };
+  const { rows, rowCount } = await pool.query(queryEmail);
+
+  if (rowCount === 0) throw new AuthenticationError('Verification failed');
+  if (rows[0].verification_token !== verificationToken) {
+    throw new AuthenticationError('Verification failed');
+  }
+
+  const queryUpdate = {
+    text: `UPDATE users
+            SET is_verified = TRUE,
+              verification_token = '',
+              verified = CURRENT_TIMESTAMP
+            WHERE email = $1`,
+    values: [email],
+  };
+  await pool.query(queryUpdate);
+
+  res.status(StatusCodes.OK).json({ status: 'success', message: 'Email verified' });
 };
 
 export const login = async (req, res) => {

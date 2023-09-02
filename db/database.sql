@@ -8,9 +8,9 @@ CREATE TABLE users (
   email VARCHAR(50) UNIQUE NOT NULL,
   password VARCHAR(70) NOT NULL,
   role role,
-  verification_token VARCHAR(255),
+  verification_token VARCHAR(90),
   is_verified BOOLEAN DEFAULT FALSE,
-  verified DATE,
+  verified TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
