@@ -67,10 +67,17 @@ export const login = async (req, res) => {
   const { rows, rowCount } = await pool.query(query);
 
   if (rowCount === 0) throw new AuthenticationError('Invalid credentials');
-  const { user_id: userId, username, password: hashedPassword, role } = rows[0];
+  const {
+    user_id: userId,
+    username,
+    password: hashedPassword,
+    role,
+    is_verified: isVerified,
+  } = rows[0];
 
   const isPasswordCorrect = await verifyPassword(password, hashedPassword);
   if (!isPasswordCorrect) throw new AuthenticationError('Invalid password');
+  if (!isVerified) throw new AuthenticationError('Please verify your email');
 
   const userPayload = { userId, username, role };
   attachCookiesToResponse({ res, userPayload });
