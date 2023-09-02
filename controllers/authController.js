@@ -38,22 +38,20 @@ export const register = async (req, res) => {
 
   const role = (await isFirstAccount()) ? 'admin' : 'user';
   const hashedPassword = await hashPassword(password);
+  const verificationToken = 'fake token';
 
   const query = {
-    text: `INSERT INTO users (username, email, password, role)
-              VALUES ($1, $2, $3, $4)
-              RETURNING user_id`,
-    values: [username, email, hashedPassword, role],
+    text: `INSERT INTO users (username, email, password, role, verification_token)
+              VALUES ($1, $2, $3, $4, $5)`,
+    values: [username, email, hashedPassword, role, verificationToken],
   };
-  const { rows } = await pool.query(query);
+  await pool.query(query);
 
-  const userPayload = { userId: rows[0].user_id, username, role };
-  attachCookiesToResponse({ res, userPayload });
-
+  // Send verification token back only while testing in postman!!!
   res.status(StatusCodes.CREATED).json({
     status: 'success',
-    message: 'Successfully adding user',
-    data: { ...userPayload },
+    message: 'Success! Please check your email to verify account',
+    data: { verificationToken },
   });
 };
 
