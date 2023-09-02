@@ -101,34 +101,72 @@ export const login = async (req, res) => {
   await validateLoginPayload(req.body);
 
   const { email, password } = req.body;
+  const client = await pool.connect();
 
-  const query = {
-    text: 'SELECT * FROM users WHERE email = $1',
-    values: [email],
-  };
-  const { rows, rowCount } = await pool.query(query);
+  try {
+    await client.query('BEGIN');
 
-  if (rowCount === 0) throw new AuthenticationError('Invalid credentials');
-  const {
-    user_id: userId,
-    username,
-    password: hashedPassword,
-    role,
-    is_verified: isVerified,
-  } = rows[0];
+    const query = {
+      text: 'SELECT * FROM users WHERE email = $1',
+      values: [email],
+    };
+    const { rows, rowCount } = await client.query(query);
 
-  const isPasswordCorrect = await verifyPassword(password, hashedPassword);
-  if (!isPasswordCorrect) throw new AuthenticationError('Invalid password');
-  if (!isVerified) throw new AuthenticationError('Please verify your email');
+    if (rowCount === 0) throw new AuthenticationError('Invalid credentials');
+    const {
+      user_id: userId,
+      username,
+      password: hashedPassword,
+      role,
+      is_verified: isVerified,
+    } = rows[0];
 
-  const userPayload = { userId, username, role };
-  attachCookiesToResponse({ res, userPayload });
+    const isPasswordCorrect = await verifyPassword(password, hashedPassword);
+    if (!isPasswordCorrect) throw new AuthenticationError('Invalid password');
+    if (!isVerified) throw new AuthenticationError('Please verify your email');
 
-  res.status(StatusCodes.OK).json({
-    status: 'success',
-    message: 'Successfully logged in',
-    data: { ...userPayload },
-  });
+    const userPayload = { userId, username, role };
+
+    const queryRefreshToken = {
+      text: `SELECT refresh_token, is_valid FROM tokens
+            WHERE user_id = $1 FOR UPDATE`,
+      values: [userId],
+    };
+    const { rows: rowsToken, rowCount: rowCountToken } = await client.query(queryRefreshToken);
+
+    let refreshToken = '';
+
+    if (rowCountToken !== 0) {
+      const { refresh_token: refreshTokenDb, is_valid: isValid } = rowsToken[0];
+      if (!isValid) throw new AuthenticationError('Please verify your email');
+      refreshToken = refreshTokenDb;
+    } else {
+      refreshToken = crypto.randomBytes(40).toString('hex');
+      const userAgent = req.headers['user-agent'];
+      const { ip } = req;
+
+      const queryToken = {
+        text: `INSERT INTO tokens (user_id, refresh_token, ip, user_agent)
+              VALUES ($1, $2, $3, $4)`,
+        values: [userId, refreshToken, ip, userAgent],
+      };
+      await client.query(queryToken);
+    }
+
+    await client.query('COMMIT');
+    attachCookiesToResponse({ res, userPayload, refreshToken });
+
+    return res.status(StatusCodes.OK).json({
+      status: 'success',
+      message: 'Successfully logged in',
+      data: { ...userPayload },
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export const logout = async (req, res) => {

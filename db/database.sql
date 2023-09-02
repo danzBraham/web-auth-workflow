@@ -21,7 +21,7 @@ CREATE TABLE tokens (
     ON DELETE CASCADE
     ON UPDATE CASCADE
     NOT NULL,
-  refresh_token VARCHAR(100) NOT NULL,
+  refresh_token VARCHAR(90) NOT NULL,
   ip INET NOT NULL,
   user_agent VARCHAR(255) NOT NULL,
   is_valid BOOLEAN DEFAULT TRUE NOT NULL,
