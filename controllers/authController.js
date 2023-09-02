@@ -1,8 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
-import { attachCookiesToResponse, hashPassword, verifyPassword } from '../utils/index.js';
 import { AuthenticationError, BadRequestError } from '../errors/index.js';
 import { validateRegisterPayload, validateLoginPayload } from '../validators/auth/index.js';
 import pool from '../db/connectDB.js';
+import {
+  attachCookiesToResponse,
+  hashPassword,
+  verifyPassword,
+  sendVerificationEmail,
+} from '../utils/index.js';
 
 const crypto = await import('node:crypto');
 
@@ -49,11 +54,19 @@ export const register = async (req, res) => {
   };
   await pool.query(query);
 
-  // Send verification token back only while testing in postman!!!
+  // origin is front-end app url or domain
+  // http://localhost:3000 just for testing
+  const origin = 'http://localhost:3000';
+  await sendVerificationEmail({
+    name: username,
+    email,
+    verificationToken,
+    origin,
+  });
+
   res.status(StatusCodes.CREATED).json({
     status: 'success',
     message: 'Success! Please check your email to verify account',
-    data: { verificationToken },
   });
 };
 
