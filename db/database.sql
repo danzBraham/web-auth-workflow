@@ -7,6 +7,8 @@ CREATE TABLE users (
   username VARCHAR(25) UNIQUE NOT NULL,
   email VARCHAR(50) UNIQUE NOT NULL,
   password VARCHAR(70) NOT NULL,
+  password_token VARCHAR(90) NOT NULL,
+  password_token_expiration_date DATE NOT NULL,
   role role NOT NULL,
   verification_token VARCHAR(90),
   is_verified BOOLEAN DEFAULT FALSE NOT NULL,

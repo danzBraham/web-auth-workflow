@@ -169,6 +169,14 @@ export const login = async (req, res) => {
   }
 };
 
+export const forgotPassword = async (req, res) => {
+  res.send('forgot password');
+};
+
+export const resetPassword = async (req, res) => {
+  res.send('reset password');
+};
+
 export const logout = async (req, res) => {
   const query = {
     text: 'DELETE FROM tokens WHERE user_id = $1',
