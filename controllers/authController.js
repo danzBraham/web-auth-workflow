@@ -170,7 +170,18 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  res.cookie('token', 'logout', {
+  const query = {
+    text: 'DELETE FROM tokens WHERE user_id = $1',
+    values: [req.user.userId],
+  };
+  await pool.query(query);
+
+  res.cookie('accessToken', 'logout', {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+
+  res.cookie('refreshToken', 'logout', {
     httpOnly: true,
     expires: new Date(Date.now()),
   });
