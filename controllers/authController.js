@@ -2,17 +2,19 @@ import { StatusCodes } from 'http-status-codes';
 import { AuthenticationError, BadRequestError } from '../errors/index.js';
 import pool from '../db/connectDB.js';
 import {
-  validateRegisterPayload,
-  validateLoginPayload,
-  validateForgetPasswordPayload,
-} from '../validators/auth/index.js';
-import {
   attachCookiesToResponse,
   hashPassword,
   verifyPassword,
   sendVerificationEmail,
   sendResetPasswordEmail,
+  hashString,
 } from '../utils/index.js';
+import {
+  validateRegisterPayload,
+  validateLoginPayload,
+  validateForgetPasswordPayload,
+  validateResetPasswordPayload,
+} from '../validators/auth/index.js';
 
 const crypto = await import('node:crypto');
 
@@ -204,7 +206,7 @@ export const forgotPassword = async (req, res) => {
               SET password_token = $1,
                 password_token_expiration_date = CURRENT_TIMESTAMP + INTERVAL '10 minutes'
               WHERE user_id = $2`,
-      values: [passwordToken, userId],
+      values: [hashString(passwordToken), userId],
     };
     await pool.query(queryUpdate);
   }
@@ -216,7 +218,44 @@ export const forgotPassword = async (req, res) => {
 };
 
 export const resetPassword = async (req, res) => {
-  res.send('reset password');
+  await validateResetPasswordPayload(req.body);
+
+  const { token, email, password } = req.body;
+
+  const query = {
+    text: `SELECT user_id, password_token, password_token_expiration_date
+            FROM users WHERE email = $1`,
+    values: [email],
+  };
+  const { rows, rowCount } = await pool.query(query);
+
+  if (rowCount === 1) {
+    const currentDate = new Date();
+    const {
+      user_id: userId,
+      password_token: passwordToken,
+      password_token_expiration_date: passwordTokenExpirationDate,
+    } = rows[0];
+
+    if (passwordToken === hashString(token) && passwordTokenExpirationDate > currentDate) {
+      const hashedPassword = await hashPassword(password);
+
+      const queryUpdate = {
+        text: `UPDATE users
+                SET password = $1,
+                  password_token = NULL,
+                  password_token_expiration_date = NULL
+                WHERE user_id = $2`,
+        values: [hashedPassword, userId],
+      };
+      await pool.query(queryUpdate);
+    }
+  }
+
+  res.status(StatusCodes.OK).json({
+    status: 'success',
+    message: 'Successfully reset password',
+  });
 };
 
 export const logout = async (req, res) => {
