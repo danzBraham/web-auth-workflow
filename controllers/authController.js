@@ -1,12 +1,17 @@
 import { StatusCodes } from 'http-status-codes';
 import { AuthenticationError, BadRequestError } from '../errors/index.js';
-import { validateRegisterPayload, validateLoginPayload } from '../validators/auth/index.js';
 import pool from '../db/connectDB.js';
+import {
+  validateRegisterPayload,
+  validateLoginPayload,
+  validateForgetPasswordPayload,
+} from '../validators/auth/index.js';
 import {
   attachCookiesToResponse,
   hashPassword,
   verifyPassword,
   sendVerificationEmail,
+  sendResetPasswordEmail,
 } from '../utils/index.js';
 
 const crypto = await import('node:crypto');
@@ -170,7 +175,44 @@ export const login = async (req, res) => {
 };
 
 export const forgotPassword = async (req, res) => {
-  res.send('forgot password');
+  await validateForgetPasswordPayload(req.body);
+
+  const { email } = req.body;
+
+  const query = {
+    text: 'SELECT user_id, username FROM users WHERE email = $1',
+    values: [email],
+  };
+  const { rows, rowCount } = await pool.query(query);
+
+  if (rowCount === 1) {
+    const { user_id: userId, username } = rows[0];
+    const passwordToken = crypto.randomBytes(70).toString('hex');
+
+    // origin is front-end app url or domain
+    // http://localhost:3000 just for testing
+    const origin = 'http://localhost:3000';
+    await sendResetPasswordEmail({
+      name: username,
+      email,
+      token: passwordToken,
+      origin,
+    });
+
+    const queryUpdate = {
+      text: `UPDATE users
+              SET password_token = $1,
+                password_token_expiration_date = CURRENT_TIMESTAMP + INTERVAL '10 minutes'
+              WHERE user_id = $2`,
+      values: [passwordToken, userId],
+    };
+    await pool.query(queryUpdate);
+  }
+
+  res.status(StatusCodes.OK).json({
+    status: 'success',
+    message: 'Please check your email for reset password link',
+  });
 };
 
 export const resetPassword = async (req, res) => {
