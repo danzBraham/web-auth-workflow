@@ -1,4 +1,3 @@
-CREATE DATABASE cryptonesia_db;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TYPE role AS ENUM ('admin', 'user');
 
