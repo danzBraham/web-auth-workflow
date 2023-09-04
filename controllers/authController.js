@@ -176,6 +176,10 @@ export const login = async (req, res) => {
   }
 };
 
+export const googleAuth = async (req, res) => {
+  res.json({ message: 'You reach the callback' });
+};
+
 export const forgotPassword = async (req, res) => {
   await validateForgetPasswordPayload(req.body);
 

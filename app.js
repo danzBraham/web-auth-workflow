@@ -14,6 +14,9 @@ import userRouter from './routes/userRoutes.js';
 import notFoundMiddleware from './middlewares/notFoundMiddleware.js';
 import errorHandlerMiddleware from './middlewares/errorHandlerMiddleware.js';
 
+// config
+import './utils/passport.js';
+
 dotenv.config();
 
 const app = express();
