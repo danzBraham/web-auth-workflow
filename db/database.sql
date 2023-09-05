@@ -12,7 +12,7 @@ CREATE TABLE users (
   user_id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   username VARCHAR(25) UNIQUE NOT NULL,
   email VARCHAR(50) UNIQUE NOT NULL,
-  password VARCHAR(70) NOT NULL,
+  password VARCHAR(70),
   password_token VARCHAR(255),
   password_token_expiration_date TIMESTAMP WITH TIME ZONE,
   role_id INT REFERENCES user_roles(role_id) NOT NULL,
