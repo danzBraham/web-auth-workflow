@@ -135,8 +135,9 @@ export const login = async (req, res) => {
     const userPayload = { userId, username, role };
 
     const queryRefreshToken = {
-      text: `SELECT refresh_token, is_valid FROM tokens
-            WHERE user_id = $1 FOR UPDATE`,
+      text: `SELECT refresh_token, is_valid
+              FROM tokens
+              WHERE user_id = $1 FOR UPDATE`,
       values: [userId],
     };
     const { rows: rowsToken, rowCount: rowCountToken } = await client.query(queryRefreshToken);
@@ -176,8 +177,68 @@ export const login = async (req, res) => {
   }
 };
 
-export const googleAuth = async (req, res) => {
-  res.json({ message: 'You reach the callback' });
+export const oauthLogin = async (req, res) => {
+  const { user_id: userId, username } = req.user;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const query = {
+      text: `SELECT user_id, username, role_name
+              FROM users u
+              JOIN user_roles r
+              ON r.role_id = u.role_id
+              WHERE user_id = $1`,
+      values: [userId],
+    };
+    const { rows, rowCount } = await client.query(query);
+
+    if (rowCount === 0) throw new AuthenticationError('Invalid credentials');
+    const { role_name: role } = rows[0];
+
+    const userPayload = { userId, username, role };
+
+    const queryRefreshToken = {
+      text: `SELECT refresh_token
+              FROM tokens
+              WHERE user_id = $1 FOR UPDATE`,
+      values: [userId],
+    };
+    const { rows: rowsToken, rowCount: rowCountToken } = await client.query(queryRefreshToken);
+
+    let refreshToken = '';
+
+    if (rowCountToken !== 0) {
+      const { refresh_token: refreshTokenDb } = rowsToken[0];
+      refreshToken = refreshTokenDb;
+    } else {
+      refreshToken = crypto.randomBytes(40).toString('hex');
+      const userAgent = req.headers['user-agent'];
+      const { ip } = req;
+
+      const queryToken = {
+        text: `INSERT INTO tokens (user_id, refresh_token, ip, user_agent)
+                VALUES ($1, $2, $3, $4)`,
+        values: [userId, refreshToken, ip, userAgent],
+      };
+      await client.query(queryToken);
+    }
+
+    await client.query('COMMIT');
+    attachCookiesToResponse({ res, userPayload, refreshToken });
+
+    return res.status(StatusCodes.OK).json({
+      status: 'success',
+      message: 'Successfully logged in',
+      data: { ...userPayload },
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export const forgotPassword = async (req, res) => {

@@ -45,7 +45,7 @@ VALUES ('google'), ('facebook'), ('twitter');
 CREATE TABLE user_oauth_accounts (
   account_id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID UNIQUE REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-  provider_id INT UNIQUE REFERENCES oauth_providers(provider_id) NOT NULL,
+  provider_id INT REFERENCES oauth_providers(provider_id) NOT NULL,
   provider_user_id VARCHAR(255) NOT NULL,
   access_token VARCHAR(255) NOT NULL,
   refresh_token VARCHAR(255),

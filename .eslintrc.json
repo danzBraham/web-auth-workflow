@@ -21,6 +21,7 @@
     ],
     "no-useless-constructor": "off",
     "no-console": "off",
-    "arrow-body-style": "off"
+    "arrow-body-style": "off",
+    "comma-dangle": ["error", "only-multiline"]
   }
 }
