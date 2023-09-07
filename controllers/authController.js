@@ -330,6 +330,8 @@ export const logout = async (req, res) => {
   };
   await pool.query(query);
 
+  req.session.destroy();
+
   res.cookie('accessToken', 'logout', {
     httpOnly: true,
     expires: new Date(Date.now()),
@@ -339,6 +341,8 @@ export const logout = async (req, res) => {
     httpOnly: true,
     expires: new Date(Date.now()),
   });
+
+  res.setHeader('Clear-Site-Data', '"cookies", "storage"');
 
   res.status(StatusCodes.OK).json({
     status: 'success',
