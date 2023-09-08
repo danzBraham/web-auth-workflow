@@ -15,10 +15,11 @@ CREATE TABLE users (
   password VARCHAR(70),
   password_token VARCHAR(255),
   password_token_expiration_date TIMESTAMP WITH TIME ZONE,
+  photo VARCHAR(255),
   role_id INT REFERENCES user_roles(role_id) ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
   verification_token VARCHAR(90),
   is_verified BOOLEAN DEFAULT FALSE NOT NULL,
-  verified TIMESTAMP WITH TIME ZONE,
+  verified_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );

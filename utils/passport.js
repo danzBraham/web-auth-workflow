@@ -44,7 +44,16 @@ passport.use(
         try {
           await client.query('BEGIN');
 
-          const { displayName, emails } = profile;
+          const {
+            displayName,
+            emails,
+            photos,
+            provider,
+            _json: { email_verified: emailVerified },
+          } = profile;
+          const email = emails[0].value;
+          const photo = photos[0].value;
+
           const queryRole = {
             text: 'SELECT role_id FROM user_roles WHERE role_name = $1',
             values: ['user'],
@@ -53,10 +62,11 @@ passport.use(
           const { role_id: roleId } = rowsRole[0];
 
           const queryInsertUser = {
-            text: `INSERT INTO users (username, email, role_id, is_verified, verified)
-                    VALUES ($1, $2, $3, $4, NOW())
+            text: `INSERT INTO users
+                    (username, email, photo, role_id, is_verified, verified_at)
+                    VALUES ($1, $2, $3, $4, $5, NOW())
                     RETURNING user_id`,
-            values: [displayName, emails[0].value, roleId, true],
+            values: [displayName, email, photo, roleId, emailVerified],
           };
           const { rows: rowsUser } = await client.query(queryInsertUser);
           const { user_id: userId } = rowsUser[0];
@@ -64,7 +74,7 @@ passport.use(
           const queryProvider = {
             text: `SELECT provider_id FROM oauth_providers
                     WHERE provider_name = $1`,
-            values: ['google'],
+            values: [provider],
           };
           const { rows: rowsProvider } = await client.query(queryProvider);
           const { provider_id: providerId } = rowsProvider[0];
