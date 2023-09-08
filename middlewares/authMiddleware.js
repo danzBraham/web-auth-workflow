@@ -5,41 +5,32 @@ import pool from '../db/connectDB.js';
 export const authenticateUser = async (req, res, next) => {
   const { accessToken, refreshToken } = req.signedCookies;
 
-  try {
-    if (accessToken) {
-      const { userId, username, role } = verifyToken(accessToken);
-      req.user = { userId, username, role };
-    } else if (refreshToken) {
-      const {
-        userId,
-        username,
-        role,
-        refreshToken: payloadRefreshToken,
-      } = verifyToken(refreshToken);
+  if (accessToken) {
+    const { userId, username, role } = verifyToken(accessToken);
+    req.user = { userId, username, role };
+  } else if (refreshToken) {
+    const { userId, username, role, refreshToken: payloadRefreshToken } = verifyToken(refreshToken);
 
-      const query = {
-        text: `SELECT is_valid FROM tokens
-                WHERE user_id = $1 AND refresh_token = $2`,
-        values: [userId, payloadRefreshToken],
-      };
-      const { rows } = await pool.query(query);
-      const tokenExist = rows[0];
+    const query = {
+      text: `SELECT is_valid FROM tokens
+              WHERE user_id = $1 AND refresh_token = $2`,
+      values: [userId, payloadRefreshToken],
+    };
+    const { rows } = await pool.query(query);
+    const tokenExist = rows[0];
 
-      if (!tokenExist || !tokenExist?.is_valid) {
-        throw new AuthenticationError('Authentication failed: Invalid token');
-      }
-
-      const userPayload = { userId, username, role };
-      attachCookiesToResponse({ res, userPayload, refreshToken: payloadRefreshToken });
-      req.user = userPayload;
-    } else {
-      throw new AuthenticationError('Authentication failed: No token provided');
+    if (!tokenExist || !tokenExist?.is_valid) {
+      throw new AuthenticationError('Authentication failed: Invalid token');
     }
 
-    next();
-  } catch (error) {
-    throw new AuthenticationError(error.message);
+    const userPayload = { userId, username, role };
+    attachCookiesToResponse({ res, userPayload, refreshToken: payloadRefreshToken });
+    req.user = userPayload;
+  } else {
+    throw new AuthenticationError('Authentication failed: Please login');
   }
+
+  next();
 };
 
 export const authorizePermission = (...roles) => {

@@ -178,14 +178,14 @@ export const login = async (req, res) => {
 };
 
 export const oauthLogin = async (req, res) => {
-  const { user_id: userId, username } = req.user;
+  const { user_id: userId } = req.user;
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
     const query = {
-      text: `SELECT user_id, username, role_name
+      text: `SELECT username, role_name
               FROM users u
               JOIN user_roles r
               ON r.role_id = u.role_id
@@ -195,7 +195,7 @@ export const oauthLogin = async (req, res) => {
     const { rows, rowCount } = await client.query(query);
 
     if (rowCount === 0) throw new AuthenticationError('Invalid credentials');
-    const { role_name: role } = rows[0];
+    const { username, role_name: role } = rows[0];
 
     const userPayload = { userId, username, role };
 
@@ -214,13 +214,10 @@ export const oauthLogin = async (req, res) => {
       refreshToken = refreshTokenDb;
     } else {
       refreshToken = crypto.randomBytes(40).toString('hex');
-      const userAgent = req.headers['user-agent'];
-      const { ip } = req;
-
       const queryToken = {
-        text: `INSERT INTO tokens (user_id, refresh_token, ip, user_agent)
-                VALUES ($1, $2, $3, $4)`,
-        values: [userId, refreshToken, ip, userAgent],
+        text: `INSERT INTO tokens (user_id, refresh_token)
+                VALUES ($1, $2)`,
+        values: [userId, refreshToken],
       };
       await client.query(queryToken);
     }

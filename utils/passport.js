@@ -9,7 +9,7 @@ passport.serializeUser((user, cb) => {
 passport.deserializeUser(async (user, cb) => {
   const userId = user.user_id;
   const query = {
-    text: `SELECT user_id, username
+    text: `SELECT user_id
             FROM users
             WHERE user_id = $1`,
     values: [userId],
@@ -26,15 +26,13 @@ passport.use(
       callbackURL: process.env.REDIRECT_URI,
     },
     async (accessToken, refreshToken, profile, cb) => {
-      const { id } = profile;
+      const { id: emailId } = profile;
 
       const query = {
-        text: `SELECT u.user_id, username
-                FROM users u
-                JOIN user_oauth_accounts uoa
-                  ON uoa.user_id = u.user_id
+        text: `SELECT user_id
+                FROM user_oauth_accounts
                 WHERE provider_user_id = $1`,
-        values: [id],
+        values: [emailId],
       };
       const { rows, rowCount } = await pool.query(query);
 
@@ -42,34 +40,45 @@ passport.use(
         cb(null, rows[0]);
       } else {
         const client = await pool.connect();
+
         try {
           await client.query('BEGIN');
 
           const { displayName, emails } = profile;
-          const { expires_in: expiresIn } = profile;
+          const queryRole = {
+            text: 'SELECT role_id FROM user_roles WHERE role_name = $1',
+            values: ['user'],
+          };
+          const { rows: rowsRole } = await client.query(queryRole);
+          const { role_id: roleId } = rowsRole[0];
 
           const queryInsertUser = {
             text: `INSERT INTO users (username, email, role_id, is_verified, verified)
-                    VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-                    RETURNING user_id, username`,
-            values: [displayName, emails[0].value, 2, true],
+                    VALUES ($1, $2, $3, $4, NOW())
+                    RETURNING user_id`,
+            values: [displayName, emails[0].value, roleId, true],
           };
           const { rows: rowsUser } = await client.query(queryInsertUser);
           const { user_id: userId } = rowsUser[0];
-          const expiresAt = new Date(Date.now() + expiresIn * 1000);
+
+          const queryProvider = {
+            text: `SELECT provider_id FROM oauth_providers
+                    WHERE provider_name = $1`,
+            values: ['google'],
+          };
+          const { rows: rowsProvider } = await client.query(queryProvider);
+          const { provider_id: providerId } = rowsProvider[0];
 
           const queryInsertAccount = {
-            text: `INSERT INTO user_oauth_accounts (
-                      user_id, provider_id, provider_user_id,
-                      access_token, expires_at
-                    )
-                    VALUES ($1, $2, $3, $4, $5)`,
-            values: [userId, 1, id, accessToken, expiresAt],
+            text: `INSERT INTO user_oauth_accounts
+                    (user_id, provider_id, provider_user_id)
+                    VALUES ($1, $2, $3)`,
+            values: [userId, providerId, emailId],
           };
           await client.query(queryInsertAccount);
           await client.query('COMMIT');
 
-          cb(null, ...rowsUser[0]);
+          cb(null, rowsUser[0]);
         } catch (error) {
           await client.query('ROLLBACK');
           throw error;
