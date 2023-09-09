@@ -18,27 +18,27 @@ import {
 
 const crypto = await import('node:crypto');
 
-const isFirstAccount = async () => {
-  const { rowCount } = await pool.query('SELECT * FROM users');
+const isFirstAccount = async (client) => {
+  const { rowCount } = await client.query('SELECT * FROM users');
   return rowCount === 0;
 };
 
-const verifyUsername = async (username) => {
+const verifyUsername = async (username, client) => {
   const query = {
     text: 'SELECT username from users WHERE username = $1',
     values: [username],
   };
-  const { rowCount } = await pool.query(query);
+  const { rowCount } = await client.query(query);
 
   if (rowCount > 0) throw new BadRequestError('Username already in use');
 };
 
-const verifyEmail = async (email) => {
+const verifyEmail = async (email, client) => {
   const query = {
     text: 'SELECT email from users WHERE email = $1',
     values: [email],
   };
-  const { rowCount } = await pool.query(query);
+  const { rowCount } = await client.query(query);
 
   if (rowCount > 0) throw new BadRequestError('Email already in use');
 };
@@ -47,34 +47,51 @@ export const register = async (req, res) => {
   await validateRegisterPayload(req.body);
 
   const { username, email, password } = req.body;
-  await verifyUsername(username);
-  await verifyEmail(email);
+  const client = await pool.connect();
 
-  const role = (await isFirstAccount()) ? 'admin' : 'user';
-  const hashedPassword = await hashPassword(password);
-  const verificationToken = crypto.randomBytes(40).toString('hex');
+  try {
+    await client.query('BEGIN');
+    await verifyUsername(username, client);
+    await verifyEmail(email, client);
 
-  const query = {
-    text: `INSERT INTO users (username, email, password, role, verification_token)
+    const role = (await isFirstAccount(client)) ? 'admin' : 'user';
+    const queryRole = {
+      text: `SELECT role_id FROM user_roles
+            WHERE role_name = $1`,
+      values: [role],
+    };
+    const { rows } = await client.query(queryRole);
+    const { role_id: roleId } = rows[0];
+    const hashedPassword = await hashPassword(password);
+    const verificationToken = crypto.randomBytes(40).toString('hex');
+
+    const query = {
+      text: `INSERT INTO users (username, email, password, role_id, verification_token)
               VALUES ($1, $2, $3, $4, $5)`,
-    values: [username, email, hashedPassword, role, verificationToken],
-  };
-  await pool.query(query);
+      values: [username, email, hashedPassword, roleId, verificationToken],
+    };
+    await client.query(query);
+    await client.query('COMMIT');
 
-  // origin is front-end app url or domain
-  // http://localhost:3000 just for testing
-  const origin = 'http://localhost:3000';
-  await sendVerificationEmail({
-    name: username,
-    email,
-    verificationToken,
-    origin,
-  });
+    // origin is front-end app url or domain
+    // http://localhost:3000 just for testing
+    const origin = 'http://localhost:3000';
+    await sendVerificationEmail({
+      name: username,
+      email,
+      verificationToken,
+      origin,
+    });
 
-  res.status(StatusCodes.CREATED).json({
-    status: 'success',
-    message: 'Success! Please check your email to verify account',
-  });
+    res.status(StatusCodes.CREATED).json({
+      status: 'success',
+      message: 'Success! Please check your email to verify account',
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+  } finally {
+    client.release();
+  }
 };
 
 export const verifyEmailToken = async (req, res) => {
