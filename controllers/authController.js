@@ -207,8 +207,7 @@ export const oauthLogin = async (req, res) => {
     const query = {
       text: `SELECT username, role_name
               FROM users u
-              JOIN user_roles r
-              ON r.role_id = u.role_id
+              JOIN user_roles r ON r.role_id = u.role_id
               WHERE user_id = $1`,
       values: [userId],
     };
