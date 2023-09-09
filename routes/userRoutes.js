@@ -11,9 +11,9 @@ import { authenticateUser, authorizePermission } from '../middlewares/authMiddle
 const router = express.Router();
 
 router.route('/').get(authenticateUser, authorizePermission('admin'), getAllUsers);
-router.route('/showMe').get(authenticateUser, showCurrentUser);
-router.route('/updateUser').patch(authenticateUser, updateUser);
-router.route('/updateUserPassword').patch(authenticateUser, updateUserPassword);
+router.route('/show-me').get(authenticateUser, showCurrentUser);
+router.route('/update-user').patch(authenticateUser, updateUser);
+router.route('/update-user-password').patch(authenticateUser, updateUserPassword);
 router.route('/:id').get(authenticateUser, getSingleUser);
 
 export default router;
