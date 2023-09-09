@@ -3,9 +3,15 @@ import registerSchema from './registerSchema.js';
 import loginSchema from './loginSchema.js';
 import forgetPasswordSchema from './forgetPasswordSchema.js';
 import resetPasswordSchema from './resetPasswordSchema.js';
+import verifyEmailTokenSchema from './verifyEmailTokenSchema.js';
 
 export const validateRegisterPayload = async (payload) => {
   const { error } = await registerSchema.validateAsync(payload, { abortEarly: false });
+  if (error) throw new BadRequestError(error.message);
+};
+
+export const validateVerifyEmailTokenPayload = async (payload) => {
+  const { error } = await verifyEmailTokenSchema.validateAsync(payload, { abortEarly: false });
   if (error) throw new BadRequestError(error.message);
 };
 

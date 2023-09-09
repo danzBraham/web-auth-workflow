@@ -14,6 +14,7 @@ import {
   validateLoginPayload,
   validateForgetPasswordPayload,
   validateResetPasswordPayload,
+  validateVerifyEmailTokenPayload,
 } from '../validators/auth/index.js';
 
 const crypto = await import('node:crypto');
@@ -95,6 +96,8 @@ export const register = async (req, res) => {
 };
 
 export const verifyEmailToken = async (req, res) => {
+  await validateVerifyEmailTokenPayload(req.body);
+
   const { email, verificationToken } = req.body;
 
   const queryEmail = {
@@ -112,7 +115,7 @@ export const verifyEmailToken = async (req, res) => {
     text: `UPDATE users
             SET is_verified = TRUE,
               verification_token = '',
-              verified = CURRENT_TIMESTAMP
+              verified_at = NOW()
             WHERE email = $1`,
     values: [email],
   };
