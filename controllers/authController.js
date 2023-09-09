@@ -285,7 +285,7 @@ export const forgotPassword = async (req, res) => {
     const queryUpdate = {
       text: `UPDATE users
               SET password_token = $1,
-                password_token_expiration_date = CURRENT_TIMESTAMP + INTERVAL '10 minutes'
+                password_token_expiration_date = NOW() + INTERVAL '10 minutes'
               WHERE user_id = $2`,
       values: [hashString(passwordToken), userId],
     };
