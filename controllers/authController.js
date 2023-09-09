@@ -134,7 +134,10 @@ export const login = async (req, res) => {
     await client.query('BEGIN');
 
     const query = {
-      text: 'SELECT * FROM users WHERE email = $1',
+      text: `SELECT user_id, username, password, role_name, is_verified
+              FROM users u
+              JOIN user_roles r ON r.role_id = u.role_id
+              WHERE email = $1`,
       values: [email],
     };
     const { rows, rowCount } = await client.query(query);
@@ -144,7 +147,7 @@ export const login = async (req, res) => {
       user_id: userId,
       username,
       password: hashedPassword,
-      role,
+      role_name: role,
       is_verified: isVerified,
     } = rows[0];
 
@@ -170,13 +173,10 @@ export const login = async (req, res) => {
       refreshToken = refreshTokenDb;
     } else {
       refreshToken = crypto.randomBytes(40).toString('hex');
-      const userAgent = req.headers['user-agent'];
-      const { ip } = req;
-
       const queryToken = {
-        text: `INSERT INTO tokens (user_id, refresh_token, ip, user_agent)
-              VALUES ($1, $2, $3, $4)`,
-        values: [userId, refreshToken, ip, userAgent],
+        text: `INSERT INTO tokens (user_id, refresh_token)
+              VALUES ($1, $2)`,
+        values: [userId, refreshToken],
       };
       await client.query(queryToken);
     }
